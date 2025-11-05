@@ -4,9 +4,11 @@ from datetime import datetime
 import os
 import uuid
 
-from utils.database import users_collection, create_indexes
+from utils.database import users_collection, conversations_collection, create_indexes
 from services.auth_service import hash_password, verify_password, create_access_token, verify_token
 from models.user import SignupRequest, LoginRequest, UserResponse, AuthResponse
+from pydantic import BaseModel
+from typing import Optional, List
 
 app = FastAPI(title="AllOutputs API", version="1.0.0")
 
@@ -174,6 +176,231 @@ async def get_me(authorization: str = Header(None)):
                     "subscription_tier": user.get("subscription_tier", "free"),
                     "usage_stats": user.get("usage_stats", {})
                 }
+            }
+        }
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Chat Models
+class ChatRequest(BaseModel):
+    conversation_id: Optional[str] = None
+    model: str
+    message: str
+    stream: bool = False
+
+class ChatCompareRequest(BaseModel):
+    message: str
+    models: List[str]
+
+# Chat Endpoints
+@app.post("/api/chat")
+async def chat(request: ChatRequest, authorization: str = Header(None)):
+    """Send a chat message"""
+    try:
+        user = await get_current_user(authorization)
+        
+        # Generate conversation ID if new
+        conversation_id = request.conversation_id or str(uuid.uuid4())
+        message_id = str(uuid.uuid4())
+        
+        # Mock AI response (we'll integrate real AI later)
+        mock_responses = {
+            "gpt-4o-mini": "This is a mock response from GPT-4o Mini. I understand your query and here's my detailed answer with helpful insights.",
+            "gemini-flash": "Hello! This is Gemini Flash responding. I can help you with various tasks efficiently and quickly.",
+            "gpt-4o": "GPT-4o here! This is an advanced response with deep reasoning and comprehensive analysis of your question.",
+            "claude-3-7-sonnet": "Claude 3.7 Sonnet speaking. I provide thoughtful, nuanced responses with careful consideration of context.",
+            "gemini-2-5-pro": "Gemini 2.5 Pro at your service. I offer advanced capabilities for complex queries and detailed analysis."
+        }
+        
+        ai_response = mock_responses.get(request.model, f"Mock response from {request.model}")
+        
+        # Create message objects
+        user_message = {
+            "id": str(uuid.uuid4()),
+            "role": "user",
+            "content": request.message,
+            "timestamp": datetime.utcnow(),
+        }
+        
+        assistant_message = {
+            "id": message_id,
+            "role": "assistant",
+            "content": ai_response,
+            "model": request.model,
+            "timestamp": datetime.utcnow(),
+            "tokens_used": len(ai_response.split())
+        }
+        
+        # Save or update conversation
+        conversation = await conversations_collection.find_one({"_id": conversation_id})
+        
+        if conversation:
+            # Update existing conversation
+            await conversations_collection.update_one(
+                {"_id": conversation_id},
+                {
+                    "$push": {"messages": {"$each": [user_message, assistant_message]}},
+                    "$set": {"last_message_at": datetime.utcnow()}
+                }
+            )
+        else:
+            # Create new conversation
+            conversation_data = {
+                "_id": conversation_id,
+                "user_id": user["_id"],
+                "title": request.message[:50] + "..." if len(request.message) > 50 else request.message,
+                "messages": [user_message, assistant_message],
+                "ai_specialist": None,
+                "tags": [],
+                "is_favorite": False,
+                "folder": None,
+                "created_at": datetime.utcnow(),
+                "last_message_at": datetime.utcnow()
+            }
+            await conversations_collection.insert_one(conversation_data)
+        
+        # Update user usage stats
+        await users_collection.update_one(
+            {"_id": user["_id"]},
+            {
+                "$inc": {
+                    "usage_stats.total_queries": 1,
+                    "usage_stats.queries_this_month": 1
+                }
+            }
+        )
+        
+        return {
+            "success": True,
+            "data": {
+                "message_id": message_id,
+                "conversation_id": conversation_id,
+                "response": ai_response,
+                "tokens_used": len(ai_response.split()),
+                "model": request.model
+            }
+        }
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        print(f"Chat error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/conversations")
+async def get_conversations(authorization: str = Header(None)):
+    """Get user's conversations"""
+    try:
+        user = await get_current_user(authorization)
+        
+        conversations = await conversations_collection.find(
+            {"user_id": user["_id"]}
+        ).sort("last_message_at", -1).to_list(length=100)
+        
+        # Format conversations for response
+        formatted_conversations = []
+        for conv in conversations:
+            formatted_conversations.append({
+                "id": conv["_id"],
+                "title": conv.get("title", "New Conversation"),
+                "last_message_at": conv.get("last_message_at").isoformat() if conv.get("last_message_at") else None,
+                "message_count": len(conv.get("messages", []))
+            })
+        
+        return {
+            "success": True,
+            "data": {
+                "conversations": formatted_conversations
+            }
+        }
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/conversations/{conversation_id}")
+async def get_conversation(conversation_id: str, authorization: str = Header(None)):
+    """Get a specific conversation"""
+    try:
+        user = await get_current_user(authorization)
+        
+        conversation = await conversations_collection.find_one({
+            "_id": conversation_id,
+            "user_id": user["_id"]
+        })
+        
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        
+        # Format messages
+        messages = []
+        for msg in conversation.get("messages", []):
+            messages.append({
+                "id": msg["id"],
+                "role": msg["role"],
+                "content": msg["content"],
+                "model": msg.get("model"),
+                "timestamp": msg["timestamp"].isoformat() if isinstance(msg["timestamp"], datetime) else msg["timestamp"],
+                "tokens_used": msg.get("tokens_used")
+            })
+        
+        return {
+            "success": True,
+            "data": {
+                "messages": messages
+            }
+        }
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/conversations/{conversation_id}")
+async def delete_conversation(conversation_id: str, authorization: str = Header(None)):
+    """Delete a conversation"""
+    try:
+        user = await get_current_user(authorization)
+        
+        result = await conversations_collection.delete_one({
+            "_id": conversation_id,
+            "user_id": user["_id"]
+        })
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        
+        return {
+            "success": True,
+            "data": {
+                "message": "Conversation deleted successfully"
+            }
+        }
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/chat/compare")
+async def compare_models(request: ChatCompareRequest, authorization: str = Header(None)):
+    """Compare responses from multiple models"""
+    try:
+        user = await get_current_user(authorization)
+        
+        # Mock responses for comparison
+        comparisons = []
+        for model in request.models:
+            comparisons.append({
+                "model": model,
+                "response": f"This is a mock response from {model} for comparison. Each model has its unique approach and style.",
+                "response_time": 1.5,
+                "tokens_used": 50
+            })
+        
+        return {
+            "success": True,
+            "data": {
+                "comparisons": comparisons
             }
         }
     except HTTPException as e:

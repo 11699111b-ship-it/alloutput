@@ -1,10 +1,11 @@
 import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from 'sonner';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import DashboardPage from './pages/DashboardPage';
+import ChatPage from './pages/ChatPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -23,6 +24,16 @@ function App() {
               </ProtectedRoute>
             } 
           />
+          <Route 
+            path="/app/chat" 
+            element={
+              <ProtectedRoute>
+                <ChatPage />
+              </ProtectedRoute>
+            } 
+          />
+          {/* Redirect /app to /app/chat */}
+          <Route path="/app" element={<Navigate to="/app/chat" replace />} />
         </Routes>
       </BrowserRouter>
       <Toaster position="top-right" richColors />
