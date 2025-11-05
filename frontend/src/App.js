@@ -6,6 +6,8 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import DashboardPage from './pages/DashboardPage';
 import ChatPage from './pages/ChatPage';
+import SpecialistsPage from './pages/SpecialistsPage';
+import SummarizePage from './pages/SummarizePage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -29,6 +31,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <ChatPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/app/specialists" 
+            element={
+              <ProtectedRoute>
+                <SpecialistsPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/app/tools/summarize" 
+            element={
+              <ProtectedRoute>
+                <SummarizePage />
               </ProtectedRoute>
             } 
           />

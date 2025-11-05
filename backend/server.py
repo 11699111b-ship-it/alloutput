@@ -6,6 +6,7 @@ import uuid
 
 from utils.database import users_collection, conversations_collection, create_indexes
 from services.auth_service import hash_password, verify_password, create_access_token, verify_token
+from services.content_service import ContentService
 from models.user import SignupRequest, LoginRequest, UserResponse, AuthResponse
 from pydantic import BaseModel
 from typing import Optional, List
@@ -406,6 +407,254 @@ async def compare_models(request: ChatCompareRequest, authorization: str = Heade
     except HTTPException as e:
         raise e
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# AI Specialists Endpoints
+SPECIALISTS = {
+    "nova": {
+        "id": "nova",
+        "name": "Nova",
+        "role": "Product Manager",
+        "description": "Helps with PRDs, feature specs, and product roadmaps",
+        "system_prompt": "You are Nova, an experienced Product Manager. You help write PRDs, user stories, and roadmaps. You ask clarifying questions and provide methodical, structured outputs. Be professional and detail-oriented."
+    },
+    "harper": {
+        "id": "harper",
+        "name": "Harper",
+        "role": "Personal Brand Counselor",
+        "description": "Helps with resumes, cover letters, and LinkedIn optimization",
+        "system_prompt": "You are Harper, a Personal Brand Counselor. You help optimize resumes, craft cover letters, and enhance LinkedIn profiles. Be direct, challenging, and push for authenticity. Help people present their best professional selves."
+    },
+    "remy": {
+        "id": "remy",
+        "name": "Remy",
+        "role": "Content Writer",
+        "description": "Helps with emails, blog posts, and newsletters",
+        "system_prompt": "You are Remy, a skilled Content Writer. You help write emails, blog posts, newsletters, and long-form content. Be creative, offer style variations, and maintain a flowing, engaging tone."
+    },
+    "lennon": {
+        "id": "lennon",
+        "name": "Lennon",
+        "role": "Social Media Manager",
+        "description": "Helps with Instagram posts and social media strategies",
+        "system_prompt": "You are Lennon, a Social Media Manager. You help create Instagram posts, develop social strategies, and plan content calendars. Be energetic, trendy, and platform-savvy."
+    },
+    "emmerson": {
+        "id": "emmerson",
+        "name": "Emmerson",
+        "role": "Data Analyst",
+        "description": "Helps with data analysis and insights generation",
+        "system_prompt": "You are Emmerson, a Data Analyst. You help analyze data, generate insights, create reports, and identify trends. Be analytical, precise, and results-driven."
+    }
+}
+
+@app.get("/api/specialists")
+async def get_specialists():
+    """Get all AI specialists"""
+    try:
+        specialists_list = [
+            {
+                "id": spec["id"],
+                "name": spec["name"],
+                "role": spec["role"],
+                "description": spec["description"]
+            }
+            for spec in SPECIALISTS.values()
+        ]
+        
+        return {
+            "success": True,
+            "data": {
+                "specialists": specialists_list
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/specialists/{specialist_id}")
+async def get_specialist(specialist_id: str):
+    """Get a specific AI specialist"""
+    try:
+        if specialist_id not in SPECIALISTS:
+            raise HTTPException(status_code=404, detail="Specialist not found")
+        
+        specialist = SPECIALISTS[specialist_id]
+        
+        return {
+            "success": True,
+            "data": {
+                "specialist": {
+                    "id": specialist["id"],
+                    "name": specialist["name"],
+                    "role": specialist["role"],
+                    "description": specialist["description"]
+                }
+            }
+        }
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+class SpecialistChatRequest(BaseModel):
+    specialist_id: str
+    conversation_id: Optional[str] = None
+    message: str
+
+@app.post("/api/specialists/chat")
+async def chat_with_specialist(request: SpecialistChatRequest, authorization: str = Header(None)):
+    """Chat with a specific AI specialist"""
+    try:
+        user = await get_current_user(authorization)
+        
+        if request.specialist_id not in SPECIALISTS:
+            raise HTTPException(status_code=404, detail="Specialist not found")
+        
+        specialist = SPECIALISTS[request.specialist_id]
+        
+        # Generate conversation ID if new
+        conversation_id = request.conversation_id or str(uuid.uuid4())
+        message_id = str(uuid.uuid4())
+        
+        # Mock specialist-specific response
+        specialist_responses = {
+            "nova": f"As a Product Manager, let me help you with that. {request.message[:50]}... - I'll break this down into clear requirements and deliverables.",
+            "harper": f"Let's work on your personal brand. {request.message[:50]}... - I'll help you stand out and present your best self.",
+            "remy": f"Great topic! {request.message[:50]}... - Let me craft something engaging and well-structured for you.",
+            "lennon": f"Perfect for social media! {request.message[:50]}... - I'll create content that drives engagement.",
+            "emmerson": f"Let's analyze this data. {request.message[:50]}... - I'll provide clear insights and actionable recommendations."
+        }
+        
+        ai_response = specialist_responses.get(request.specialist_id, f"Mock response from {specialist['name']}")
+        
+        # Create message objects
+        user_message = {
+            "id": str(uuid.uuid4()),
+            "role": "user",
+            "content": request.message,
+            "timestamp": datetime.utcnow(),
+        }
+        
+        assistant_message = {
+            "id": message_id,
+            "role": "assistant",
+            "content": ai_response,
+            "model": f"{specialist['name']} (Specialist)",
+            "timestamp": datetime.utcnow(),
+            "tokens_used": len(ai_response.split())
+        }
+        
+        # Save or update conversation
+        conversation = await conversations_collection.find_one({"_id": conversation_id})
+        
+        if conversation:
+            # Update existing conversation
+            await conversations_collection.update_one(
+                {"_id": conversation_id},
+                {
+                    "$push": {"messages": {"$each": [user_message, assistant_message]}},
+                    "$set": {
+                        "last_message_at": datetime.utcnow(),
+                        "ai_specialist": request.specialist_id
+                    }
+                }
+            )
+        else:
+            # Create new conversation
+            conversation_data = {
+                "_id": conversation_id,
+                "user_id": user["_id"],
+                "title": request.message[:50] + "..." if len(request.message) > 50 else request.message,
+                "messages": [user_message, assistant_message],
+                "ai_specialist": request.specialist_id,
+                "tags": [],
+                "is_favorite": False,
+                "folder": None,
+                "created_at": datetime.utcnow(),
+                "last_message_at": datetime.utcnow()
+            }
+            await conversations_collection.insert_one(conversation_data)
+        
+        # Update user usage stats
+        await users_collection.update_one(
+            {"_id": user["_id"]},
+            {
+                "$inc": {
+                    "usage_stats.total_queries": 1,
+                    "usage_stats.queries_this_month": 1
+                }
+            }
+        )
+        
+        return {
+            "success": True,
+            "data": {
+                "message_id": message_id,
+                "conversation_id": conversation_id,
+                "response": ai_response,
+                "specialist": specialist["name"],
+                "tokens_used": len(ai_response.split())
+            }
+        }
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        print(f"Specialist chat error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Content Tools Endpoints
+class SummarizeRequest(BaseModel):
+    type: str  # url, text, file
+    content: str
+    length: str = "medium"
+
+@app.post("/api/tools/summarize")
+async def summarize_content(
+    request: SummarizeRequest,
+    authorization: str = Header(None)
+):
+    """Summarize content from URL, text, or file"""
+    try:
+        user = await get_current_user(authorization)
+        
+        # Extract content based on type
+        if request.type == "url":
+            content = ContentService.extract_url_content(request.content)
+        elif request.type == "text":
+            content = request.content
+        elif request.type == "file":
+            # File handling would be implemented here
+            raise HTTPException(status_code=400, detail="File upload not yet implemented")
+        else:
+            raise HTTPException(status_code=400, detail="Invalid type")
+        
+        # Generate summary (mock for now)
+        summary = ContentService.generate_mock_summary(content, request.length)
+        
+        # Update user usage stats
+        await users_collection.update_one(
+            {"_id": user["_id"]},
+            {
+                "$inc": {
+                    "usage_stats.total_queries": 1,
+                    "usage_stats.queries_this_month": 1
+                }
+            }
+        )
+        
+        return {
+            "success": True,
+            "data": {
+                "summary": summary
+            }
+        }
+    
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        print(f"Summarize error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":

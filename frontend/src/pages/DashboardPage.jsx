@@ -80,17 +80,26 @@ export default function DashboardPage() {
           <div className="mt-8">
             <h3 className="text-lg font-semibold text-[#e5e7eb] mb-4">Quick Actions</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="p-4 bg-[#0f0f10] border-[#2d2d2f] hover:border-[#4f46e5] transition-colors cursor-pointer">
+              <Card 
+                className="p-4 bg-[#0f0f10] border-[#2d2d2f] hover:border-[#4f46e5] transition-colors cursor-pointer"
+                onClick={() => navigate('/app/chat')}
+              >
                 <h4 className="text-[#e5e7eb] font-medium mb-2">Start Chat</h4>
                 <p className="text-[#9ca3af] text-sm">Begin a conversation with AI</p>
               </Card>
               
-              <Card className="p-4 bg-[#0f0f10] border-[#2d2d2f] hover:border-[#4f46e5] transition-colors cursor-pointer">
+              <Card 
+                className="p-4 bg-[#0f0f10] border-[#2d2d2f] hover:border-[#4f46e5] transition-colors cursor-pointer"
+                onClick={() => navigate('/app/specialists')}
+              >
                 <h4 className="text-[#e5e7eb] font-medium mb-2">AI Specialists</h4>
                 <p className="text-[#9ca3af] text-sm">Get specialized help</p>
               </Card>
               
-              <Card className="p-4 bg-[#0f0f10] border-[#2d2d2f] hover:border-[#4f46e5] transition-colors cursor-pointer">
+              <Card 
+                className="p-4 bg-[#0f0f10] border-[#2d2d2f] hover:border-[#4f46e5] transition-colors cursor-pointer"
+                onClick={() => navigate('/app/tools/summarize')}
+              >
                 <h4 className="text-[#e5e7eb] font-medium mb-2">Prompts Library</h4>
                 <p className="text-[#9ca3af] text-sm">Browse prompt templates</p>
               </Card>
