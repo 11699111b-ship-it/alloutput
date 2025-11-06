@@ -122,53 +122,56 @@ export default function SpecialistsPage() {
               <motion.button
                 key={specialist.id}
                 onClick={() => handleSpecialistClick(specialist.id)}
-                className={`text-left p-6 rounded-xl border ${specialist.borderColor} ${specialist.bgColor} hover:scale-[1.02] transition-all group relative overflow-hidden`}
+                className="text-left p-8 rounded-2xl hover:scale-[1.02] transition-all group relative overflow-hidden shadow-lg border border-white/5"
+                style={{
+                  background: `linear-gradient(135deg, ${
+                    specialist.id === 'nova' ? '#f97316, #ea580c' :
+                    specialist.id === 'harper' ? '#ec4899, #d946ef, #a855f7' :
+                    specialist.id === 'remy' ? '#3b82f6, #2563eb, #06b6d4' :
+                    specialist.id === 'lennon' ? '#8b5cf6, #7c3aed, #6d28d9' :
+                    '#0ea5e9, #0284c7, #0369a1'
+                  })`
+                }}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                whileHover={{ y: -4 }}
+                whileHover={{ y: -4, boxShadow: '0 16px 32px rgba(0,0,0,0.4)' }}
               >
-                {/* Gradient Background */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${specialist.color} opacity-0 group-hover:opacity-10 transition-opacity`} />
-                
                 {/* Content */}
                 <div className="relative z-10">
-                  {/* Icon and Name */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className={`w-14 h-14 rounded-xl ${specialist.bgColor} flex items-center justify-center`}>
-                      <Icon className="w-7 h-7 text-white" />
-                    </div>
-                  </div>
-
                   {/* Name and Role */}
-                  <div className="mb-3">
-                    <h3 className="text-2xl font-bold text-white mb-1">{specialist.name}</h3>
-                    <p className="text-gray-400 font-medium">{specialist.role}</p>
+                  <div className="mb-4">
+                    <h3 className="text-3xl font-bold text-white mb-2 drop-shadow-md">{specialist.name}</h3>
+                    <p className="text-white/90 font-medium text-lg">{specialist.role}</p>
                   </div>
 
                   {/* Description */}
-                  <p className="text-gray-300 mb-4">
+                  <p className="text-white/80 mb-6 leading-relaxed">
                     {specialist.description}
                   </p>
 
                   {/* Capabilities */}
-                  <div className="space-y-2">
-                    {specialist.capabilities.map((capability, i) => (
-                      <div key={i} className="flex items-center gap-2 text-sm text-gray-400">
-                        <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-blue-500 to-purple-500" />
+                  <div className="space-y-2.5">
+                    {specialist.capabilities.slice(0, 3).map((capability, i) => (
+                      <div key={i} className="flex items-center gap-2 text-sm text-white/70">
+                        <div className="w-1.5 h-1.5 rounded-full bg-white/50" />
                         <span>{capability}</span>
                       </div>
                     ))}
                   </div>
 
-                  {/* Chat Button */}
-                  <div className="mt-6">
-                    <span className="text-sm text-blue-400 group-hover:text-blue-300 font-medium flex items-center gap-2">
-                      Chat with {specialist.name}
+                  {/* Hover Indicator */}
+                  <div className="mt-6 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="text-sm text-white font-medium flex items-center gap-2">
+                      Start chatting
                       <ChevronLeft className="w-4 h-4 rotate-180 group-hover:translate-x-1 transition-transform" />
                     </span>
                   </div>
                 </div>
+
+                {/* Decorative Elements */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl" />
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full blur-2xl" />
               </motion.button>
             );
           })}

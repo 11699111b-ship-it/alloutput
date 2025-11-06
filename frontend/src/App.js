@@ -7,6 +7,7 @@ import SignupPage from './pages/SignupPage';
 import DashboardPage from './pages/DashboardPage';
 import ChatPage from './pages/ChatPage';
 import SpecialistsPage from './pages/SpecialistsPage';
+import PromptsPage from './pages/PromptsPage';
 import SummarizePage from './pages/SummarizePage';
 import GeneratePostPage from './pages/GeneratePostPage';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -40,6 +41,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <SpecialistsPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/app/prompts" 
+            element={
+              <ProtectedRoute>
+                <PromptsPage />
               </ProtectedRoute>
             } 
           />

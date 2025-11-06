@@ -26,23 +26,23 @@ export default function ChatInput() {
   
   return (
     <form onSubmit={handleSubmit} className="w-full">
-      <div className="relative bg-surface rounded-xl border border-border focus-within:border-primary transition-colors">
+      <div className="relative bg-[#2d2d2f] rounded-xl border border-[#404040] focus-within:border-[#4f46e5] transition-all shadow-lg">
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Tell me something about this page"
-          rows={1}
-          className="w-full px-4 py-3 bg-transparent resize-none focus:outline-none text-text-primary placeholder:text-text-muted max-h-32"
-          style={{ minHeight: '52px' }}
+          rows={3}
+          className="w-full px-5 py-4 bg-transparent resize-none focus:outline-none text-gray-200 placeholder:text-gray-500 max-h-48 text-base"
+          style={{ minHeight: '120px' }}
           disabled={isLoading}
           data-testid="chat-input"
         />
         
-        <div className="absolute right-3 bottom-3 flex items-center gap-2">
+        <div className="absolute right-4 bottom-4 flex items-center gap-2">
           <button
             type="button"
-            className="p-2 hover:bg-background rounded-lg transition-colors text-text-secondary hover:text-text-primary"
+            className="p-2.5 hover:bg-[#3d3d3f] rounded-lg transition-colors text-gray-400 hover:text-gray-300"
             title="Attach file"
             data-testid="attach-button"
           >
@@ -51,7 +51,7 @@ export default function ChatInput() {
           
           <button
             type="button"
-            className="p-2 hover:bg-background rounded-lg transition-colors text-text-secondary hover:text-text-primary"
+            className="p-2.5 hover:bg-[#3d3d3f] rounded-lg transition-colors text-gray-400 hover:text-gray-300"
             title="Voice input"
             data-testid="voice-button"
           >
@@ -61,7 +61,7 @@ export default function ChatInput() {
           <button
             type="submit"
             disabled={!input.trim() || isLoading}
-            className="p-2 bg-primary hover:bg-primary-hover rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-2.5 bg-[#4f46e5] hover:bg-[#4338ca] rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
             title="Send message"
             data-testid="send-button"
           >
@@ -71,8 +71,9 @@ export default function ChatInput() {
       </div>
       
       {isLoading && (
-        <div className="mt-2 text-sm text-text-secondary">
-          <span className="inline-block animate-pulse">Thinking...</span>
+        <div className="mt-3 text-sm text-gray-400 flex items-center gap-2">
+          <div className="w-2 h-2 bg-[#4f46e5] rounded-full animate-pulse"></div>
+          <span>Thinking...</span>
         </div>
       )}
     </form>

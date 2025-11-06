@@ -84,63 +84,65 @@ export default function ChatDashboard() {
   ];
   
   return (
-    <div className="h-full flex flex-col items-center justify-center p-8">
-      <div className="w-full max-w-4xl mx-auto">
+    <div className="h-full flex flex-col items-center justify-center p-6 md:p-8">
+      <div className="w-full max-w-3xl mx-auto space-y-8">
         {/* Greeting */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-2">
+        <div className="text-center">
+          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
             Hi {user?.name || 'there'}, How Can I help you Today?
           </h1>
         </div>
         
-        {/* Quick Actions Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+        {/* Quick Actions - Horizontal Row of Small Circles */}
+        <div className="flex items-center justify-center gap-3 md:gap-4 flex-wrap">
           {quickActions.map((action) => {
             const Icon = action.icon;
             return (
-              <button
-                key={action.id}
-                onClick={action.onClick}
-                className="flex flex-col items-center p-6 rounded-2xl bg-surface hover:bg-surface-elevated transition-all duration-200 hover:scale-105 group"
-                data-testid={`quick-action-${action.label.toLowerCase().replace(/\s+/g, '-')}`}
-              >
-                <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${action.color} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-                  <Icon className="w-7 h-7 text-white" />
-                </div>
-                <span className="text-sm font-medium text-center">{action.label}</span>
-              </button>
+              <div key={action.id} className="flex flex-col items-center gap-2">
+                <button
+                  onClick={action.onClick}
+                  className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-[#2d2d2f] hover:bg-[#3d3d3f] transition-all duration-200 flex items-center justify-center group"
+                  data-testid={`quick-action-${action.label.toLowerCase().replace(/\s+/g, '-')}`}
+                  title={action.description}
+                >
+                  <Icon className="w-5 h-5 md:w-6 md:h-6 text-gray-300 group-hover:text-white transition-colors" />
+                </button>
+                <span className="text-xs text-gray-400 text-center max-w-[80px] leading-tight">
+                  {action.label}
+                </span>
+              </div>
             );
           })}
         </div>
         
-        {/* Model Selector and Input */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <ModelSelector />
-            <button
-              onClick={() => setShowComparisonModal(true)}
-              className="px-4 py-2 border border-border rounded-lg hover:bg-surface transition-colors text-sm font-medium"
-              data-testid="compare-model-button"
-            >
-              Compare Model
-            </button>
-          </div>
-          
+        {/* Model Selector and Controls */}
+        <div className="flex items-center justify-center gap-3 flex-wrap">
+          <ModelSelector />
           <button
-            className="text-sm text-text-secondary hover:text-text-primary transition-colors"
+            onClick={() => setShowComparisonModal(true)}
+            className="px-4 py-2 bg-[#2d2d2f] hover:bg-[#3d3d3f] rounded-lg transition-colors text-sm font-medium border border-[#404040]"
+            data-testid="compare-model-button"
+          >
+            Compare Model
+          </button>
+          <button
+            className="px-4 py-2 text-sm text-gray-400 hover:text-gray-300 transition-colors"
             data-testid="history-button"
           >
             History
           </button>
-          
-          {/* Chat Input */}
+        </div>
+        
+        {/* Chat Input - Large and Prominent */}
+        <div className="mt-8">
           <ChatInput />
         </div>
         
         {/* Upgrade Banner */}
-        <div className="mt-8 text-center">
-          <button className="text-primary hover:text-primary-light transition-colors text-sm font-medium">
-            🚀 Upgrade to Pro
+        <div className="text-center pt-4">
+          <button className="text-orange-500 hover:text-orange-400 transition-colors text-sm font-medium inline-flex items-center gap-2">
+            <span>🚀</span>
+            <span>Upgrade to Pro</span>
           </button>
         </div>
       </div>
