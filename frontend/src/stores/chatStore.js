@@ -6,6 +6,8 @@ const useChatStore = create((set, get) => ({
   currentConversation: null,
   messages: [],
   selectedModel: 'gpt-4o-mini',
+  selectedModels: ['gpt-4o-mini'], // NEW: Array of selected models
+  multiModelMode: false, // NEW: True when 2+ models selected
   isLoading: false,
   isStreaming: false,
   error: null,
@@ -23,17 +25,74 @@ const useChatStore = create((set, get) => ({
     ],
   },
   
-  // Set selected model
+  // Set selected model (legacy - for backwards compatibility)
   setSelectedModel: (modelId) => {
-    set({ selectedModel: modelId });
+    set({ 
+      selectedModel: modelId,
+      selectedModels: [modelId],
+      multiModelMode: false,
+    });
   },
   
-  // Send message
+  // NEW: Add model to selection (max 3)
+  addModel: (modelId) => {
+    const { selectedModels } = get();
+    
+    // Check if already selected
+    if (selectedModels.includes(modelId)) {
+      return;
+    }
+    
+    // Check max limit (3 models)
+    if (selectedModels.length >= 3) {
+      return;
+    }
+    
+    const newModels = [...selectedModels, modelId];
+    set({ 
+      selectedModels: newModels,
+      selectedModel: newModels[0], // Keep first as primary
+      multiModelMode: newModels.length >= 2,
+    });
+  },
+  
+  // NEW: Remove model from selection (ensure at least 1 remains)
+  removeModel: (modelId) => {
+    const { selectedModels } = get();
+    
+    // Can't remove if only 1 model
+    if (selectedModels.length <= 1) {
+      return;
+    }
+    
+    const newModels = selectedModels.filter(id => id !== modelId);
+    set({ 
+      selectedModels: newModels,
+      selectedModel: newModels[0], // Update primary to first remaining
+      multiModelMode: newModels.length >= 2,
+    });
+  },
+  
+  // NEW: Set multiple models at once
+  setModels: (modelIds) => {
+    // Validate: at least 1, max 3
+    if (modelIds.length === 0 || modelIds.length > 3) {
+      return;
+    }
+    
+    set({ 
+      selectedModels: modelIds,
+      selectedModel: modelIds[0], // First as primary
+      multiModelMode: modelIds.length >= 2,
+    });
+  },
+  
+  // Send message (supports both single and multi-model mode)
   sendMessage: async (message, conversationId = null) => {
     set({ isLoading: true, error: null });
     
     try {
-      const { selectedModel, messages } = get();
+      const { selectedModel, selectedModels, multiModelMode, messages } = get();
       
       // Add user message to UI immediately
       const userMessage = {
@@ -45,31 +104,60 @@ const useChatStore = create((set, get) => ({
       
       set({ messages: [...get().messages, userMessage] });
       
-      // Send to backend
-      const response = await api.post('/api/chat', {
-        conversation_id: conversationId,
-        model: selectedModel,
-        message: message,
-        stream: false,
-      });
-      
-      const data = response.data.data;
-      
-      // Add AI response
-      const aiMessage = {
-        id: data.message_id,
-        role: 'assistant',
-        content: data.response,
-        model: data.model,
-        timestamp: new Date().toISOString(),
-        tokens_used: data.tokens_used,
-      };
-      
-      set({ 
-        messages: [...get().messages, aiMessage],
-        currentConversation: data.conversation_id,
-        isLoading: false,
-      });
+      if (multiModelMode) {
+        // Multi-model mode: send to multiple models
+        const response = await api.post('/api/chat', {
+          conversation_id: conversationId,
+          models: selectedModels,
+          message: message,
+          stream: false,
+          multi_model: true,
+        });
+        
+        const data = response.data.data;
+        
+        // Add multi-model AI response
+        const aiMessage = {
+          id: data.message_id,
+          role: 'assistant',
+          multi_model: true,
+          responses: data.responses, // Array of responses from each model
+          timestamp: new Date().toISOString(),
+        };
+        
+        set({ 
+          messages: [...get().messages, aiMessage],
+          currentConversation: data.conversation_id,
+          isLoading: false,
+        });
+        
+      } else {
+        // Single model mode: existing logic
+        const response = await api.post('/api/chat', {
+          conversation_id: conversationId,
+          model: selectedModel,
+          message: message,
+          stream: false,
+        });
+        
+        const data = response.data.data;
+        
+        // Add AI response
+        const aiMessage = {
+          id: data.message_id,
+          role: 'assistant',
+          content: data.response,
+          model: data.model,
+          timestamp: new Date().toISOString(),
+          tokens_used: data.tokens_used,
+        };
+        
+        set({ 
+          messages: [...get().messages, aiMessage],
+          currentConversation: data.conversation_id,
+          isLoading: false,
+        });
+      }
       
       // Reload conversations
       get().loadConversations();

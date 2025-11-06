@@ -4,7 +4,7 @@ import useChatStore from '../../../stores/chatStore';
 
 export default function ChatInput() {
   const [input, setInput] = useState('');
-  const { sendMessage, isLoading, currentConversation } = useChatStore();
+  const { sendMessage, isLoading, currentConversation, selectedModels, multiModelMode, models } = useChatStore();
   
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,14 +24,30 @@ export default function ChatInput() {
     }
   };
   
+  // Get model names for multi-model indicator
+  const allModels = [...models.basic, ...models.advanced];
+  const selectedModelNames = selectedModels
+    .map(id => allModels.find(m => m.id === id)?.name)
+    .filter(Boolean);
+  
   return (
     <form onSubmit={handleSubmit} className="w-full">
+      {/* Multi-model indicator */}
+      {multiModelMode && (
+        <div className="mb-2 text-xs text-gray-400 flex items-center gap-2">
+          <span className="w-2 h-2 bg-primary rounded-full"></span>
+          <span>
+            Asking {selectedModels.length} models: {selectedModelNames.join(', ')}
+          </span>
+        </div>
+      )}
+      
       <div className="relative bg-[#2d2d2f] rounded-xl border border-[#404040] focus-within:border-[#4f46e5] transition-all shadow-lg">
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Tell me something about this page"
+          placeholder="ask anything"
           rows={3}
           className="w-full px-5 py-4 bg-transparent resize-none focus:outline-none text-gray-200 placeholder:text-gray-500 max-h-48 text-base"
           style={{ minHeight: '120px' }}
@@ -73,7 +89,7 @@ export default function ChatInput() {
       {isLoading && (
         <div className="mt-3 text-sm text-gray-400 flex items-center gap-2">
           <div className="w-2 h-2 bg-[#4f46e5] rounded-full animate-pulse"></div>
-          <span>Thinking...</span>
+          <span>{multiModelMode ? 'Asking all models...' : 'Thinking...'}</span>
         </div>
       )}
     </form>

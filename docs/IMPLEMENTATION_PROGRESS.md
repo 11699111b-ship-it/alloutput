@@ -381,26 +381,109 @@ Frontend provides:
 
 ---
 
+## Current Phase: Multi-Model Chat Integration 🚀
+
+### Phase 4: Multi-Model Chat Feature Implementation (In Progress)
+
+**Objective:** Integrate multi-model selection directly into main chat interface, allowing users to get responses from multiple AI models with a single input.
+
+**Plan Document:** `/app/docs/MULTI_MODEL_CHAT_FEATURE_PLAN.md`
+
+**Microsteps:**
+
+#### ✅ Microstep 4.1: Enhanced Model Selector (3 credits) - COMPLETE
+**Status:** ✅ Implementation complete
+**Tasks:**
+- [x] Update chatStore to support `selectedModels` array
+- [x] Add `addModel()`, `removeModel()`, `setModels()` actions
+- [x] Create multi-model selector UI with chips and + button
+- [x] Add model removal functionality (× on chips)
+- [x] Implement max 3 models validation
+- [x] Add visual feedback for model selection
+- [x] Updated `sendMessage()` to support multi-model mode
+
+**Files Modified:**
+- `/app/frontend/src/stores/chatStore.js` - Added multi-model state and actions
+- `/app/frontend/src/components/features/chat/ModelSelector.jsx` - Complete rewrite with chip-based UI
+
+**Key Features:**
+- Model chips display with × to remove (when 2+ selected)
+- "+ Add Model" button (shows count 1/3, 2/3)
+- Dropdown shows which models are already selected
+- Pro model locking maintained
+- Smooth transitions and hover states
+- Dark theme consistent styling
+
+#### ✅ Microstep 4.2: Multi-Response Message Component (3 credits) - COMPLETE
+**Status:** ✅ Implementation complete
+**Tasks:**
+- [x] Create new component for side-by-side responses
+- [x] Implement responsive grid (1-3 columns)
+- [x] Add model name and metadata display
+- [x] Add individual copy buttons
+- [x] Add voting mechanism
+- [x] Markdown rendering with syntax highlighting
+
+**Files Created:**
+- `/app/frontend/src/components/features/chat/MultiResponseMessage.jsx` - New component
+
+**Files Modified:**
+- `/app/frontend/src/components/features/chat/MessageList.jsx` - Added multi-model detection
+
+**Key Features:**
+- Side-by-side response cards (2-3 columns)
+- Model name, response time, token count headers
+- Markdown rendering with code syntax highlighting
+- Individual copy and regenerate buttons
+- Voting mechanism ("Which response was most helpful?")
+- Dark theme styling with proper contrast
+
+#### ✅ Microstep 4.3: Update Chat Input & Placeholder (1 credit) - COMPLETE
+**Status:** ✅ Implementation complete
+**Tasks:**
+- [x] Change placeholder text to "ask anything"
+- [x] Add indicator when multiple models selected
+- [x] Update submit logic to handle multi-model
+- [x] Show which models are being asked
+
+**Files Modified:**
+- `/app/frontend/src/components/features/chat/ChatInput.jsx` - Updated placeholder and added multi-model indicator
+
+**Key Features:**
+- New placeholder: "ask anything" (lowercase, simple)
+- Multi-model indicator shows: "Asking 2 models: GPT-4o Mini, Claude 3.7"
+- Loading text changes to "Asking all models..." in multi-model mode
+
+#### Microstep 4.4: Backend Multi-Model Support (4 credits) - PENDING
+**Tasks:**
+- Update Pydantic models for multi-model requests
+- Add parallel AI model calling with asyncio.gather()
+- Handle errors gracefully
+- Update conversation saving logic
+
+#### Microstep 4.5: Wire Frontend to Backend (2 credits) - PENDING
+**Tasks:**
+- Update `sendMessage()` to detect multi-model mode
+- Handle multi-model API response
+- Render appropriate message component
+
+#### Microstep 4.6: UI Polish & Dark Theme Consistency (2 credits) - PENDING
+**Tasks:**
+- Remove "Compare Model" button from ChatDashboard
+- Ensure consistent dark theme colors throughout
+- Polish styling and animations
+
+---
+
 ## Next Steps 📋
 
-### Recommended Next Phase:
-1. **Phase 2 Continuation: Typography & Color Refinements** (1-2 credits)
-   - Ensure consistent typography across all pages
-   - Fine-tune color contrast
-   - Polish animations and transitions
-
-2. **Sidebar/Navigation Component** (3-4 credits)
-   - Create a persistent sidebar like Emily AI
-   - Add navigation links (Chat, Prompts, AI Specialists, Settings)
-   - User profile section at bottom
-   - Mobile hamburger menu
-
-3. **Backend Integration for Real AI** (8-10 credits)
+### After Multi-Model Chat Feature:
+1. **Backend Integration for Real AI** (8-10 credits)
    - Integrate Emergent LLM Key
    - Connect to OpenAI, Anthropic, Google APIs
    - Real AI responses instead of mocks
 
-4. **Additional Content Tools** (6-8 credits)
+2. **Additional Content Tools** (6-8 credits)
    - Chat with Webpage
    - Extract Data tool
    - Create Chapters tool

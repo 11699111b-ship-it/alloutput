@@ -187,9 +187,11 @@ async def get_me(authorization: str = Header(None)):
 # Chat Models
 class ChatRequest(BaseModel):
     conversation_id: Optional[str] = None
-    model: str
+    model: Optional[str] = None  # Single model (legacy)
+    models: Optional[List[str]] = None  # Multiple models (new)
     message: str
     stream: bool = False
+    multi_model: bool = False  # Flag for multi-model mode
 
 class ChatCompareRequest(BaseModel):
     message: str
@@ -198,7 +200,7 @@ class ChatCompareRequest(BaseModel):
 # Chat Endpoints
 @app.post("/api/chat")
 async def chat(request: ChatRequest, authorization: str = Header(None)):
-    """Send a chat message"""
+    """Send a chat message (supports both single and multi-model mode)"""
     try:
         user = await get_current_user(authorization)
         
@@ -206,18 +208,16 @@ async def chat(request: ChatRequest, authorization: str = Header(None)):
         conversation_id = request.conversation_id or str(uuid.uuid4())
         message_id = str(uuid.uuid4())
         
-        # Mock AI response (we'll integrate real AI later)
+        # Mock AI responses
         mock_responses = {
-            "gpt-4o-mini": "This is a mock response from GPT-4o Mini. I understand your query and here's my detailed answer with helpful insights.",
-            "gemini-flash": "Hello! This is Gemini Flash responding. I can help you with various tasks efficiently and quickly.",
-            "gpt-4o": "GPT-4o here! This is an advanced response with deep reasoning and comprehensive analysis of your question.",
-            "claude-3-7-sonnet": "Claude 3.7 Sonnet speaking. I provide thoughtful, nuanced responses with careful consideration of context.",
-            "gemini-2-5-pro": "Gemini 2.5 Pro at your service. I offer advanced capabilities for complex queries and detailed analysis."
+            "gpt-4o-mini": "This is a mock response from GPT-4o Mini. I understand your query and here's my detailed answer with helpful insights about the topic you asked.",
+            "gemini-flash": "Hello! This is Gemini Flash responding. I can help you with various tasks efficiently and quickly. Let me provide you with a clear and concise answer.",
+            "gpt-4o": "GPT-4o here! This is an advanced response with deep reasoning and comprehensive analysis of your question. I'll break this down systematically for you.",
+            "claude-3-7-sonnet": "Claude 3.7 Sonnet speaking. I provide thoughtful, nuanced responses with careful consideration of context. Here's my analysis of your query.",
+            "gemini-2-5-pro": "Gemini 2.5 Pro at your service. I offer advanced capabilities for complex queries and detailed analysis. Let me give you an in-depth response."
         }
         
-        ai_response = mock_responses.get(request.model, f"Mock response from {request.model}")
-        
-        # Create message objects
+        # Create user message
         user_message = {
             "id": str(uuid.uuid4()),
             "role": "user",
@@ -225,64 +225,145 @@ async def chat(request: ChatRequest, authorization: str = Header(None)):
             "timestamp": datetime.utcnow(),
         }
         
-        assistant_message = {
-            "id": message_id,
-            "role": "assistant",
-            "content": ai_response,
-            "model": request.model,
-            "timestamp": datetime.utcnow(),
-            "tokens_used": len(ai_response.split())
-        }
-        
-        # Save or update conversation
-        conversation = await conversations_collection.find_one({"_id": conversation_id})
-        
-        if conversation:
-            # Update existing conversation
-            await conversations_collection.update_one(
-                {"_id": conversation_id},
+        # Check if multi-model mode
+        if request.multi_model and request.models:
+            # Multi-model mode: generate responses for all selected models
+            import asyncio
+            import random
+            
+            async def generate_model_response(model_id):
+                """Simulate AI response generation (with mock delay)"""
+                await asyncio.sleep(random.uniform(0.5, 1.5))  # Mock processing time
+                
+                response_text = mock_responses.get(model_id, f"Mock response from {model_id}")
+                tokens = len(response_text.split())
+                
+                return {
+                    "model": model_id,
+                    "response": response_text,
+                    "tokens_used": tokens,
+                    "response_time": round(random.uniform(1.5, 3.0), 2)
+                }
+            
+            # Generate all responses in parallel
+            tasks = [generate_model_response(model_id) for model_id in request.models]
+            responses = await asyncio.gather(*tasks)
+            
+            # Create assistant message with multiple responses
+            assistant_message = {
+                "id": message_id,
+                "role": "assistant",
+                "multi_model": True,
+                "responses": responses,
+                "timestamp": datetime.utcnow(),
+            }
+            
+            # Save conversation
+            conversation = await conversations_collection.find_one({"_id": conversation_id})
+            
+            if conversation:
+                await conversations_collection.update_one(
+                    {"_id": conversation_id},
+                    {
+                        "$push": {"messages": {"$each": [user_message, assistant_message]}},
+                        "$set": {"last_message_at": datetime.utcnow()}
+                    }
+                )
+            else:
+                conversation_data = {
+                    "_id": conversation_id,
+                    "user_id": user["_id"],
+                    "title": request.message[:50] + "..." if len(request.message) > 50 else request.message,
+                    "messages": [user_message, assistant_message],
+                    "ai_specialist": None,
+                    "tags": [],
+                    "is_favorite": False,
+                    "folder": None,
+                    "created_at": datetime.utcnow(),
+                    "last_message_at": datetime.utcnow()
+                }
+                await conversations_collection.insert_one(conversation_data)
+            
+            # Update usage stats
+            await users_collection.update_one(
+                {"_id": user["_id"]},
                 {
-                    "$push": {"messages": {"$each": [user_message, assistant_message]}},
-                    "$set": {"last_message_at": datetime.utcnow()}
+                    "$inc": {
+                        "usage_stats.total_queries": len(request.models),  # Count each model query
+                        "usage_stats.queries_this_month": len(request.models)
+                    }
                 }
             )
-        else:
-            # Create new conversation
-            conversation_data = {
-                "_id": conversation_id,
-                "user_id": user["_id"],
-                "title": request.message[:50] + "..." if len(request.message) > 50 else request.message,
-                "messages": [user_message, assistant_message],
-                "ai_specialist": None,
-                "tags": [],
-                "is_favorite": False,
-                "folder": None,
-                "created_at": datetime.utcnow(),
-                "last_message_at": datetime.utcnow()
-            }
-            await conversations_collection.insert_one(conversation_data)
-        
-        # Update user usage stats
-        await users_collection.update_one(
-            {"_id": user["_id"]},
-            {
-                "$inc": {
-                    "usage_stats.total_queries": 1,
-                    "usage_stats.queries_this_month": 1
+            
+            return {
+                "success": True,
+                "data": {
+                    "message_id": message_id,
+                    "conversation_id": conversation_id,
+                    "responses": responses
                 }
             }
-        )
         
-        return {
-            "success": True,
-            "data": {
-                "message_id": message_id,
-                "conversation_id": conversation_id,
-                "response": ai_response,
-                "tokens_used": len(ai_response.split()),
-                "model": request.model
+        else:
+            # Single model mode (legacy)
+            ai_response = mock_responses.get(request.model, f"Mock response from {request.model}")
+            
+            assistant_message = {
+                "id": message_id,
+                "role": "assistant",
+                "content": ai_response,
+                "model": request.model,
+                "timestamp": datetime.utcnow(),
+                "tokens_used": len(ai_response.split())
             }
-        }
+            
+            # Save conversation
+            conversation = await conversations_collection.find_one({"_id": conversation_id})
+            
+            if conversation:
+                await conversations_collection.update_one(
+                    {"_id": conversation_id},
+                    {
+                        "$push": {"messages": {"$each": [user_message, assistant_message]}},
+                        "$set": {"last_message_at": datetime.utcnow()}
+                    }
+                )
+            else:
+                conversation_data = {
+                    "_id": conversation_id,
+                    "user_id": user["_id"],
+                    "title": request.message[:50] + "..." if len(request.message) > 50 else request.message,
+                    "messages": [user_message, assistant_message],
+                    "ai_specialist": None,
+                    "tags": [],
+                    "is_favorite": False,
+                    "folder": None,
+                    "created_at": datetime.utcnow(),
+                    "last_message_at": datetime.utcnow()
+                }
+                await conversations_collection.insert_one(conversation_data)
+            
+            # Update usage stats
+            await users_collection.update_one(
+                {"_id": user["_id"]},
+                {
+                    "$inc": {
+                        "usage_stats.total_queries": 1,
+                        "usage_stats.queries_this_month": 1
+                    }
+                }
+            )
+            
+            return {
+                "success": True,
+                "data": {
+                    "message_id": message_id,
+                    "conversation_id": conversation_id,
+                    "response": ai_response,
+                    "tokens_used": len(ai_response.split()),
+                    "model": request.model
+                }
+            }
     except HTTPException as e:
         raise e
     except Exception as e:
