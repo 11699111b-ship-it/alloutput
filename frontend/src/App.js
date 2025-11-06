@@ -8,6 +8,7 @@ import DashboardPage from './pages/DashboardPage';
 import ChatPage from './pages/ChatPage';
 import SpecialistsPage from './pages/SpecialistsPage';
 import SummarizePage from './pages/SummarizePage';
+import GeneratePostPage from './pages/GeneratePostPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -47,6 +48,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <SummarizePage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/app/tools/generate-post" 
+            element={
+              <ProtectedRoute>
+                <GeneratePostPage />
               </ProtectedRoute>
             } 
           />

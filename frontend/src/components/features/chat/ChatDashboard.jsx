@@ -1,15 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MessageSquare, Video, Globe, FileText, Send, Sparkles, Zap } from 'lucide-react';
 import useAuthStore from '../../../stores/authStore';
 import useChatStore from '../../../stores/chatStore';
 import ModelSelector from './ModelSelector';
 import ChatInput from './ChatInput';
+import ComparisonModal from './ComparisonModal';
 
 export default function ChatDashboard() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { sendMessage } = useChatStore();
+  const [showComparisonModal, setShowComparisonModal] = useState(false);
   
   const quickActions = [
     {
@@ -18,10 +20,7 @@ export default function ChatDashboard() {
       label: 'Compare Models',
       description: 'Compare responses side-by-side',
       color: 'from-indigo-500 to-purple-500',
-      onClick: () => {
-        // TODO: Implement comparison modal
-        console.log('Compare Models clicked');
-      }
+      onClick: () => setShowComparisonModal(true)
     },
     {
       id: 2,
@@ -54,8 +53,8 @@ export default function ChatDashboard() {
       description: 'Ask questions about any page',
       color: 'from-pink-500 to-rose-500',
       onClick: () => {
-        // TODO: Future feature
-        alert('Coming soon!');
+        // TODO: Implement Chat with Webpage feature
+        console.log('Chat with Webpage - Coming soon');
       }
     },
     {
@@ -119,6 +118,7 @@ export default function ChatDashboard() {
           <div className="flex items-center gap-3">
             <ModelSelector />
             <button
+              onClick={() => setShowComparisonModal(true)}
               className="px-4 py-2 border border-border rounded-lg hover:bg-surface transition-colors text-sm font-medium"
               data-testid="compare-model-button"
             >
@@ -144,6 +144,13 @@ export default function ChatDashboard() {
           </button>
         </div>
       </div>
+      
+      {/* Comparison Modal */}
+      <ComparisonModal
+        isOpen={showComparisonModal}
+        onClose={() => setShowComparisonModal(false)}
+        userTier={user?.subscription_tier || 'free'}
+      />
     </div>
   );
 }

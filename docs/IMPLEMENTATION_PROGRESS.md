@@ -173,37 +173,89 @@ Frontend provides:
 
 ---
 
+## Recently Completed (Bug Fixes & New Features) ✅
+
+### Bug Fix Session (January 2025) - 10 credits
+
+#### ✅ Microstep BF-1: Critical Bug Fixes (3 credits)
+**Issues Fixed:**
+- [x] **SIGNIN REDIRECT BUG**: Changed redirect from `/app/dashboard` to `/app/chat` after signin/signup
+  - Fixed in LoginPage.jsx line 46
+  - Fixed in SignupPage.jsx line 53
+- [x] **Quick Action Buttons**: Fixed broken "Chat with Webpage" button (removed alert, added console log)
+- [x] Status: **COMPLETE**
+
+#### ✅ Microstep BF-2: Generate Post Tool (4 credits)
+**Completed Components:**
+- [x] GeneratePostPage.jsx - Full UI with platform switching (LinkedIn/Twitter)
+- [x] Platform selection with button toggles
+- [x] Topic input with textarea
+- [x] Tone selection (Professional, Casual, Humorous, Inspirational)
+- [x] Length selection (Short, Medium, Long) with character indicators
+- [x] 3 variant display in grid layout
+- [x] Copy to clipboard functionality
+- [x] Character count and hashtag display
+- [x] Regenerate variants option
+- [x] Backend endpoint: POST /api/tools/generate-post
+- [x] ContentService.generate_mock_posts() - Creates 3 variants with different approaches
+- [x] Route added to App.js: /app/tools/generate-post
+- [x] Quick action buttons now working for LinkedIn and X Post
+- [x] Status: **COMPLETE**
+
+#### ✅ Microstep BF-3: Compare Models Modal (3 credits)
+**Completed Components:**
+- [x] ComparisonModal.jsx - Full modal component
+- [x] Model selection interface (2-3 models)
+- [x] Basic tier models (GPT-4o Mini, Gemini Flash) - Free
+- [x] Advanced tier models (GPT-4o, Claude 3.7, Gemini 2.5 Pro) - Pro only
+- [x] Pro tier locking with 🔒 indicator
+- [x] Query input textarea
+- [x] Side-by-side results display (1-3 columns)
+- [x] Response time and token count display
+- [x] Voting mechanism UI
+- [x] Reset/New Comparison functionality
+- [x] Integrated into ChatDashboard.jsx
+- [x] "Compare Models" quick action button now opens modal
+- [x] "Compare Model" button (next to model selector) opens modal
+- [x] Status: **COMPLETE**
+
+**Total Bug Fix Session Credits:** 10 credits
+
+---
+
 ## Upcoming Microsteps 📋
 
-### Vertical Slice 4: Content Tools (Continued)
-- **Next Options:**
-  - Microstep 5.4.3: Generate Post Tool (8 credits)
-    - LinkedIn/Twitter post generation
-    - Platform-specific formatting
-    - 3 variants per generation
-  - Microstep 5.4.4: Quick Actions Integration (6 credits)
+### Vertical Slice 5: Prompts Library
+- Not yet started
+- Estimated: 20-25 credits
 
 ### Vertical Slice 2: Chat Functionality (Deferred)
 - Microstep 5.2.2: Backend AI Service Integration (9 credits) - SKIPPED (keeping mocks)
 - Microstep 5.2.4: Implement Streaming Responses (7 credits)
-- Microstep 5.2.5: Model Comparison UI (8 credits)
 
-### Vertical Slice 5: Prompts Library
-- Not yet started
+### Additional Features (From Planning Docs)
+- Chat with Webpage tool
+- Extract Data tool
+- Create Chapters tool
+- Translate tool
 
 ---
 
 ## Notes
+- ✅ **CRITICAL FIX**: Users now go directly to chat interface after signin (not dashboard)
+- ✅ Generate Post tool fully functional with LinkedIn and Twitter support
+- ✅ Compare Models modal working with free/pro tier restrictions
 - Chat UI is fully functional with mock responses
 - Frontend and backend are wired together
 - Real AI integration requires Emergent LLM Key or API keys from user
 - All data persists to MongoDB
 - Authentication is working properly
-- App is accessible at /app/chat route
+- All quick action buttons are now functional or properly handled
 
 ## Credits Used So Far
 - **Vertical Slice 1 (Authentication):** 20-22 credits
 - **Vertical Slice 2.1 (Chat UI):** 8 credits
 - **Vertical Slice 3 (AI Specialists):** 7 credits
 - **Vertical Slice 4.1 (Summarize Tool):** 6 credits
-- **Total:** ~41-43 credits
+- **Bug Fix Session (Signin redirect, Generate Post, Compare Modal):** 10 credits
+- **Total:** ~51-53 credits

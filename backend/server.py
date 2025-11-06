@@ -657,6 +657,59 @@ async def summarize_content(
         print(f"Summarize error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+class GeneratePostRequest(BaseModel):
+    platform: str  # linkedin, twitter
+    topic: str
+    tone: str = "professional"  # professional, casual, humorous, inspirational
+    length: str = "medium"  # short, medium, long
+
+@app.post("/api/tools/generate-post")
+async def generate_post(
+    request: GeneratePostRequest,
+    authorization: str = Header(None)
+):
+    """Generate social media posts for LinkedIn or Twitter"""
+    try:
+        user = await get_current_user(authorization)
+        
+        # Validate platform
+        if request.platform not in ["linkedin", "twitter"]:
+            raise HTTPException(status_code=400, detail="Invalid platform. Must be 'linkedin' or 'twitter'")
+        
+        # Generate 3 variants (mock for now)
+        variants = ContentService.generate_mock_posts(
+            platform=request.platform,
+            topic=request.topic,
+            tone=request.tone,
+            length=request.length
+        )
+        
+        # Update user usage stats
+        await users_collection.update_one(
+            {"_id": user["_id"]},
+            {
+                "$inc": {
+                    "usage_stats.total_queries": 1,
+                    "usage_stats.queries_this_month": 1
+                }
+            }
+        )
+        
+        return {
+            "success": True,
+            "data": {
+                "variants": variants
+            }
+        }
+    
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        print(f"Generate post error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("server:app", host="0.0.0.0", port=8001, reload=True)

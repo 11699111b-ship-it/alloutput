@@ -43,7 +43,7 @@ export default function LoginPage() {
     
     if (result.success) {
       toast.success('Welcome back!');
-      navigate('/app/dashboard');
+      navigate('/app/chat');
     } else {
       toast.error(result.error || 'Login failed. Please check your credentials.');
     }

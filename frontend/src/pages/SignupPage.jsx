@@ -50,7 +50,7 @@ export default function SignupPage() {
     
     if (result.success) {
       toast.success('Account created successfully!');
-      navigate('/app/dashboard');
+      navigate('/app/chat');
     } else {
       toast.error(result.error || 'Signup failed. Please try again.');
     }
